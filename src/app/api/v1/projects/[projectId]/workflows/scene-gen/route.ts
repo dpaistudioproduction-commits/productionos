@@ -72,7 +72,7 @@ export async function POST(req: Request, { params }: { params: any }) {
     try {
       // Find any enabled text-capable provider (not just OpenAI)
       const provider = await prisma.productionAIProvider.findFirst({
-        where: { is_enabled: true }
+        where: { is_enabled: true, supported_asset_types: { has: "Text" } }
       });
       if (!provider) {
         return NextResponse.json({ error: "No AI provider configured. Please add an API key in Settings → AI Providers." }, { status: 503 });
@@ -80,7 +80,7 @@ export async function POST(req: Request, { params }: { params: any }) {
 
       const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
       const adapter = ProviderManager.getAdapter(provider.name);
-      const modelToUse = provider.supported_models?.[0] || 'gemini-2.5-flash';
+      const modelToUse = provider.supported_models?.[0] || 'gemini-1.5-flash';
       const systemPrompt = "You return strictly valid JSON arrays of objects. No markdown formatting or code blocks outside the JSON.";
       
       const response = await adapter.submitJob(apiKey, modelToUse, systemPrompt + "\n\n" + prompt);

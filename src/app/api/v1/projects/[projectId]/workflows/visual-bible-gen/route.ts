@@ -62,8 +62,8 @@ export async function POST(req: Request, { params }: { params: any }) {
 
     // Find any enabled provider (prefer Google GenAI, fallback to any enabled)
     const provider = await prisma.productionAIProvider.findFirst({
-      where: { is_enabled: true }
-    }) ?? await prisma.productionAIProvider.findFirst({ where: { name: "Google GenAI" } });
+      where: { is_enabled: true, supported_asset_types: { has: "Text" } }
+    });
 
     if (!provider) {
       return NextResponse.json({
@@ -75,7 +75,7 @@ export async function POST(req: Request, { params }: { params: any }) {
     // Credential retrieval — fail loudly if missing (no silent empty-string fallback)
     const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
     const adapter = ProviderManager.getAdapter(provider.name);
-    const modelToUse = provider.supported_models?.[0] || 'gemini-2.5-flash';
+    const modelToUse = provider.supported_models?.[0] || 'gemini-1.5-flash';
 
     const systemPrompt = "You return strictly valid JSON objects. No markdown formatting or code blocks outside the JSON.";
     

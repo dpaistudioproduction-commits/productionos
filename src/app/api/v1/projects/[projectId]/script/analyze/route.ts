@@ -48,8 +48,6 @@ export async function POST(req: Request, { params }: { params: any }) {
 
       const provider = await prisma.productionAIProvider.findFirst({
         where: { is_enabled: true, supported_asset_types: { has: "Text" } }
-      }) ?? await prisma.productionAIProvider.findFirst({
-        where: { name: "Google GenAI" }
       });
 
       if (!provider) {
@@ -58,7 +56,7 @@ export async function POST(req: Request, { params }: { params: any }) {
 
       const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
       const adapter = ProviderManager.getAdapter(provider.name);
-      const modelToUse = provider.supported_models?.[0] || "gemini-2.5-flash";
+      const modelToUse = provider.supported_models?.[0] || "gemini-1.5-flash";
 
       // 1. Language Detection
       const scriptContent = script.content || "";
@@ -138,7 +136,7 @@ Do not include any markdown fences or extra text, just raw JSON.`;
       // the entire downstream pipeline (Visual Bible, Character Manager, Image Generation).
       console.error("[BreakdownAnalyze] AI extraction failed — no fallback will be used:", apiError.message);
       return NextResponse.json({
-        error: `AI extraction failed: ${apiError.message}. Please ensure Google GenAI provider is configured and the script has content.`,
+        error: `AI extraction failed: ${apiError.message}. Please ensure a Text AI provider is configured and the script has content.`,
         ai_error: true
       }, { status: 503 });
     }

@@ -76,9 +76,11 @@ export async function POST(req: Request, { params }: { params: any }) {
       - ai_confidence (int 0-100)
     `;
 
-    let provider = await prisma.productionAIProvider.findFirst({ where: { name: "Google GenAI" } });
+    const provider = await prisma.productionAIProvider.findFirst({
+      where: { is_enabled: true, supported_asset_types: { has: "Text" } }
+    });
     if (!provider) {
-        throw new Error("Google GenAI provider not configured in system.");
+        throw new Error("No active Text AI provider configured in system.");
     }
 
     const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
@@ -87,7 +89,8 @@ export async function POST(req: Request, { params }: { params: any }) {
     const systemPrompt = "You return strictly valid JSON arrays of objects. No markdown formatting or code blocks outside the JSON.";
 
     let scenesData = [];
-    const response = await adapter.submitJob(apiKey, "gemini-2.5-flash", systemPrompt + "\n\n" + prompt);
+    const model = provider.supported_models[0] || "gemini-1.5-flash";
+    const response = await adapter.submitJob(apiKey, model, systemPrompt + "\n\n" + prompt);
     if (!response.textContent) throw new Error("No response received from AI");
     let textContent = response.textContent.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
     scenesData = JSON.parse(textContent);

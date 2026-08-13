@@ -111,8 +111,10 @@ export async function generateScriptWithAI(projectId: string, params: Record<str
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) throw new Error("Project not found");
 
-  const provider = await prisma.productionAIProvider.findFirst({ where: { name: "Google GenAI" } });
-  if (!provider) throw new Error("Google GenAI provider not configured in system.");
+  const provider = await prisma.productionAIProvider.findFirst({
+    where: { is_enabled: true, supported_asset_types: { has: "Text" } }
+  });
+  if (!provider) throw new Error("No active Text AI provider configured in system.");
 
   const { ProviderManager } = await import("@/lib/production/providers/ProviderManager");
   const { ContextBuilder } = await import("@/lib/production/assistant/ContextBuilder");
@@ -142,7 +144,8 @@ Please provide the full script now.
   `;
 
   const fullPrompt = systemPrompt + "\n\n" + userPrompt;
-  const response = await adapter.submitJob(apiKey, "gemini-2.5-flash", fullPrompt);
+  const model = provider.supported_models[0] || "gemini-1.5-flash";
+  const response = await adapter.submitJob(apiKey, model, fullPrompt);
 
   if (!response.textContent) throw new Error("No response received from AI");
 
@@ -158,8 +161,10 @@ export async function rewriteScriptWithAI(projectId: string, selectedText: strin
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) throw new Error("Project not found");
 
-  const provider = await prisma.productionAIProvider.findFirst({ where: { name: "Google GenAI" } });
-  if (!provider) throw new Error("Google GenAI provider not configured in system.");
+  const provider = await prisma.productionAIProvider.findFirst({
+    where: { is_enabled: true, supported_asset_types: { has: "Text" } }
+  });
+  if (!provider) throw new Error("No active Text AI provider configured in system.");
 
   const { ProviderManager } = await import("@/lib/production/providers/ProviderManager");
   const { ContextBuilder } = await import("@/lib/production/assistant/ContextBuilder");
@@ -193,7 +198,8 @@ ${selectedText}
   `;
 
   const fullPrompt = systemPrompt + "\n\n" + userPrompt;
-  const response = await adapter.submitJob(apiKey, "gemini-2.5-flash", fullPrompt);
+  const model = provider.supported_models[0] || "gemini-1.5-flash";
+  const response = await adapter.submitJob(apiKey, model, fullPrompt);
 
   if (!response.textContent) throw new Error("No response received from AI");
 

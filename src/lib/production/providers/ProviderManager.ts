@@ -28,7 +28,7 @@ const ENV_PROVIDER_BOOTSTRAP: Array<{
     name: "Google GenAI",
     category: "Text & Multimodal",
     supported_asset_types: ["Text", "Image", "Video"],
-    supported_models: ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"],
+    supported_models: ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"],
     auth_type: "Bearer",
   },
   {

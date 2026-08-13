@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: any }) {
 
     // Find any enabled text-capable provider (not just OpenAI)
     const provider = await prisma.productionAIProvider.findFirst({
-      where: { is_enabled: true }
+      where: { is_enabled: true, supported_asset_types: { has: "Text" } }
     });
     if (!provider) {
       return NextResponse.json({ error: "No AI provider configured. Please add an API key in Settings → AI Providers." }, { status: 503 });
@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: any }) {
 
     const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
     const adapter = ProviderManager.getAdapter(provider.name);
-    const modelToUse = provider.supported_models?.[0] || 'gemini-2.5-flash';
+    const modelToUse = provider.supported_models?.[0] || 'gemini-1.5-flash';
     const createdShots = [];
 
     // We will process all scenes, sorting them by scene number to ensure they are generated in order.

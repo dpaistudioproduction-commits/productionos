@@ -27,12 +27,12 @@ export async function generateShotPrompts(projectId: string, shotId: string) {
   if (!project) throw new Error("Project not found");
   
   const provider = await prisma.productionAIProvider.findFirst({
-    where: { name: "OpenRouter" }
+    where: { is_enabled: true, supported_asset_types: { has: "Text" } }
   });
-  if (!provider) throw new Error("OpenRouter provider not found");
+  if (!provider) throw new Error("No active Text AI provider configured in system.");
 
   const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
-  const adapter = ProviderManager.getAdapter("OpenRouter");
+  const adapter = ProviderManager.getAdapter(provider.name);
 
   const systemPrompt = `You are an expert AI prompt engineer for film and video production.
 Your task is to take the details of a specific shot and its scene, and generate highly detailed AI image, video, and character prompts.
@@ -58,7 +58,8 @@ Generate the prompts based on these details.
 `;
 
   try {
-    const response = await adapter.submitJob(apiKey, "openai/gpt-4o", userPrompt, {
+    const model = provider.supported_models[0] || "gemini-1.5-flash";
+    const response = await adapter.submitJob(apiKey, model, userPrompt, {
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -199,8 +200,10 @@ export async function regeneratePromptVersion(versionId: string, projectId: stri
 
   const visualBible = project?.ProductionVisualBible?.Versions?.[0];
 
-  const provider = await prisma.productionAIProvider.findFirst({ where: { name: "Google GenAI" } });
-  if (!provider) throw new Error("Provider not configured");
+  const provider = await prisma.productionAIProvider.findFirst({
+    where: { is_enabled: true, supported_asset_types: { has: "Text" } }
+  });
+  if (!provider) throw new Error("No active Text AI provider configured in system.");
 
   let apiKey = "";
   try { apiKey = await ProviderManager.getDecryptedCredentials(provider.id); } catch(e) {}
@@ -220,7 +223,8 @@ export async function regeneratePromptVersion(versionId: string, projectId: stri
       
       Output strict JSON: image_prompt, video_prompt, character_prompt, environment_prompt, lighting_prompt, camera_prompt, negative_prompt, model_rec, aspect_ratio.
     `;
-    const response = await adapter.submitJob(apiKey, "gemini-2.5-flash", "Return strict JSON.", prompt);
+    const model = provider.supported_models[0] || "gemini-1.5-flash";
+    const response = await adapter.submitJob(apiKey, model, "Return strict JSON.", prompt);
     try {
       pData = JSON.parse(response.textContent?.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim() || "{}");
     } catch(e) {}
