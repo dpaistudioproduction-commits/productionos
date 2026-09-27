@@ -111,12 +111,14 @@ export async function generateScriptWithAI(projectId: string, params: Record<str
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) throw new Error("Project not found");
 
+  const { ProviderManager } = await import("@/lib/production/providers/ProviderManager");
+  await ProviderManager.ensureProvidersBootstrapped();
+
   const provider = await prisma.productionAIProvider.findFirst({
     where: { is_enabled: true, supported_asset_types: { has: "Text" } }
   });
   if (!provider) throw new Error("No active Text AI provider configured in system.");
 
-  const { ProviderManager } = await import("@/lib/production/providers/ProviderManager");
   const { ContextBuilder } = await import("@/lib/production/assistant/ContextBuilder");
   
   const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
@@ -161,12 +163,14 @@ export async function rewriteScriptWithAI(projectId: string, selectedText: strin
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) throw new Error("Project not found");
 
+  const { ProviderManager } = await import("@/lib/production/providers/ProviderManager");
+  await ProviderManager.ensureProvidersBootstrapped();
+
   const provider = await prisma.productionAIProvider.findFirst({
     where: { is_enabled: true, supported_asset_types: { has: "Text" } }
   });
   if (!provider) throw new Error("No active Text AI provider configured in system.");
 
-  const { ProviderManager } = await import("@/lib/production/providers/ProviderManager");
   const { ContextBuilder } = await import("@/lib/production/assistant/ContextBuilder");
   
   const apiKey = await ProviderManager.getDecryptedCredentials(provider.id);
